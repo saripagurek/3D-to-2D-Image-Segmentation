@@ -1,7 +1,7 @@
 from PIL import Image
 import numpy as np
 
-def process_image(input_path, output_path):
+def process_specular(input_path, output_path):
     image = Image.open(input_path)
     image = image.convert('RGBA')
     width, height = image.size
@@ -11,10 +11,14 @@ def process_image(input_path, output_path):
     for y in range(height):
         for x in range(width):
             r, g, b, a = data[y, x]
-            # Invert RGB values
-            data[y, x] = [255 - r, 255 - g, 255 - b, a]
-    
+
+            # If pixel isn't black, set to white, else transparent
+            if r != 0 and g != 0 and b != 0:
+                data[y, x] = [255, 255, 255, 255]
+            else:
+                data[y, x] = [0, 0, 0, 0]
+
     manipulated_image = Image.fromarray(data)
     manipulated_image.save(output_path)
 
-process_image('test_image.png', 'test_image_edit.png')
+process_specular('test_specular.png', 'test_image_edit.png')
