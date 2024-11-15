@@ -1,5 +1,11 @@
 from PIL import Image
 import numpy as np
+import os
+
+
+directory_path = "UnprocessedImages/Shape1"
+processed_dir = "ProcessedImages"
+
 
 white = [255, 255, 255, 255]
 trns = [0, 0, 0, 0]
@@ -111,7 +117,83 @@ def combine_layers(output_path, *input_paths):
     base_image.save(output_path)
 
 
+def get_files(directory):
+    matcolour_files = []
+    illum_files = []
+    shadow_files = []
+    specular_files = []
+    input_files = []
 
+    try:
+        for filename in os.listdir(directory):
+            if "matcolor" in filename.lower():
+                matcolour_files.append(filename)
+            elif "illum" in filename.lower():
+                illum_files.append(filename)
+            elif "shadow" in filename.lower():
+                shadow_files.append(filename)
+            elif "specular" in filename.lower():
+                specular_files.append(filename)
+            elif "diffuse" not in filename.lower():
+                input_files.append(filename)
+    except FileNotFoundError:
+        print(f"The directory '{directory}' was not found.")
+    except PermissionError:
+        print(f"Permission denied for accessing the directory '{directory}'.")
+
+    '''
+    for file in matcolour_files:
+        file = file[:-4]
+        input = "" + directory_path + "/" + file + ".png"
+        output = "" + processed_dir + "/" + file + "_edit.png"
+        process_matcolour(input, output)
+
+    for file in illum_files:
+        file = file[:-4]
+        input = "" + directory_path + "/" + file + ".png"
+        output = "" + processed_dir + "/" + file + "_edit.png"
+        process_illum(input, output)
+
+    for file in shadow_files:
+        file = file[:-4]
+        input = "" + directory_path + "/" + file + ".png"
+        output = "" + processed_dir + "/" + file + "_edit.png"
+        process_shadow(input, output)
+
+    for file in specular_files:
+        file = file[:-4]
+        input = "" + directory_path + "/" + file + ".png"
+        output = "" + processed_dir + "/" + file + "_edit.png"
+        process_specular(input, output)
+    '''
+
+    for file in input_files:
+        shape = file[:-9]
+        num = file[7:-4]
+        output = "" + processed_dir + "/" + file + "_output.png"
+        mat = "" + processed_dir + "/" + shape + "_" + "matcolor" + num + "_edit.png"
+        illum = "" + processed_dir + "/" + shape + "_" + "illum" + num + "_edit.png"
+        shadow = "" + processed_dir + "/" + shape + "_" + "shadow" + num + "_edit.png"
+        spec = "" + processed_dir + "/" + shape + "_" + "specular" + num + "_edit.png"
+
+        combine_layers(
+            output,
+            mat,
+            illum,
+            shadow,
+            spec
+        )
+
+
+
+   
+
+get_files(directory_path)
+
+
+
+
+'''
 process_specular('test_specular.png', 'test_specular_edit.png')
 process_matcolour('test_matcolour.png', 'test_matcolour_edit.png')
 process_shadow('test_shadow.png', 'test_shadow_edit.png')
@@ -124,4 +206,4 @@ combine_layers(
     'test_shadow_edit.png',
     'test_specular_edit.png'
 )
-
+'''
