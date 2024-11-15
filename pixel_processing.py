@@ -51,7 +51,6 @@ def process_matcolour(input_path, output_path):
                 # need a better way to remove the horizon line?
                 data[y, x] = trns
             else:
-                #print(data[y, x])
                 data[y, x] = midtone
 
     manipulated_image = Image.fromarray(data)
@@ -79,18 +78,23 @@ def process_shadow(input_path, output_path):
     manipulated_image.save(output_path)
 
 
-def process_illum(input_path, output_path):
+def process_illum(input_path, mat_path, output_path):
     image = Image.open(input_path)
     image = image.convert('RGBA')
+
+    mat_image = Image.open(mat_path)
+    mat_image = mat_image.convert('RGBA')
     width, height = image.size
     
     data = np.array(image)
+    mat_data = np.array(mat_image)
 
     for y in range(height):
         for x in range(width):
             r, g, b, a = data[y, x]
+            mat_r, mat_g, mat_b, mat_a = mat_data[y, x]
 
-            if (r < 20 and g < 20 and b < 20) or (r >= 210 and g >= 210 and b >= 210):
+            if (mat_r == 0 and mat_g == 0 and mat_b == 0):
                 data[y, x] = trns
             else:
                 # If pixel is dark enough to be in shadow:
@@ -141,55 +145,55 @@ def get_files(directory):
     except PermissionError:
         print(f"Permission denied for accessing the directory '{directory}'.")
 
-    '''
     for file in matcolour_files:
         file = file[:-4]
         input = "" + directory_path + "/" + file + ".png"
         output = "" + processed_dir + "/" + file + "_edit.png"
-        process_matcolour(input, output)
+        #process_matcolour(input, output)
 
     for file in illum_files:
         file = file[:-4]
+        shape = file[:-9]
+        num = file[12:]
+        mat = "" + processed_dir + "/" + shape + "matcolor" + num + "_edit.png"
         input = "" + directory_path + "/" + file + ".png"
         output = "" + processed_dir + "/" + file + "_edit.png"
-        process_illum(input, output)
+        #process_illum(input, mat, output)
 
     for file in shadow_files:
         file = file[:-4]
         input = "" + directory_path + "/" + file + ".png"
         output = "" + processed_dir + "/" + file + "_edit.png"
-        process_shadow(input, output)
+        #process_shadow(input, output)
 
     for file in specular_files:
         file = file[:-4]
         input = "" + directory_path + "/" + file + ".png"
         output = "" + processed_dir + "/" + file + "_edit.png"
-        process_specular(input, output)
-    '''
+        #process_specular(input, output)
 
     for file in input_files:
-        shape = file[:-9]
-        num = file[7:-4]
-        output = "" + processed_dir + "/" + file + "_output.png"
-        mat = "" + processed_dir + "/" + shape + "_" + "matcolor" + num + "_edit.png"
-        illum = "" + processed_dir + "/" + shape + "_" + "illum" + num + "_edit.png"
-        shadow = "" + processed_dir + "/" + shape + "_" + "shadow" + num + "_edit.png"
-        spec = "" + processed_dir + "/" + shape + "_" + "specular" + num + "_edit.png"
+        if "png" in file:
+            name = file[:-4]
+            shape = file[:-9]
+            num = file[7:-4]
+            output = "" + processed_dir + "/" + name + "_output.png"
+            mat = "" + processed_dir + "/" + shape + "_" + "matcolor" + num + "_edit.png"
+            illum = "" + processed_dir + "/" + shape + "_" + "illum" + num + "_edit.png"
+            shadow = "" + processed_dir + "/" + shape + "_" + "shadow" + num + "_edit.png"
+            spec = "" + processed_dir + "/" + shape + "_" + "specular" + num + "_edit.png"
 
-        combine_layers(
-            output,
-            mat,
-            illum,
-            shadow,
-            spec
-        )
+            combine_layers(
+                output,
+                mat,
+                illum,
+                shadow,
+                spec
+            )
 
 
-
-   
 
 get_files(directory_path)
-
 
 
 
@@ -197,7 +201,7 @@ get_files(directory_path)
 process_specular('test_specular.png', 'test_specular_edit.png')
 process_matcolour('test_matcolour.png', 'test_matcolour_edit.png')
 process_shadow('test_shadow.png', 'test_shadow_edit.png')
-process_illum('test_illum.png', 'test_illum_edit.png')
+process_illum('test_illum.png', 'test_matcolour_edit.png', 'test_illum_edit.png')
 
 combine_layers(
     'final_output.png',
