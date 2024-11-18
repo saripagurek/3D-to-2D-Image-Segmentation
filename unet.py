@@ -185,6 +185,7 @@ def train_model(model, train_loader, criterion, optimizer, num_epochs=10):
 train_model(model, train_loader, criterion, optimizer, num_epochs=10)
 
 # Inference on test images
+# Inference on test images
 def predict(model, test_image_dir, output_dir):
     print("Prediction started")
     model.eval()
@@ -195,25 +196,29 @@ def predict(model, test_image_dir, output_dir):
             image = Image.open(test_path).convert('RGBA')
 
             # Convert image to numpy array and normalize
-            image = np.array(image)[:, :, :3]
-            image = image / 255.0
-            image = torch.from_numpy(image).float()
+            image = np.array(image)[:, :, :3]  # Discard alpha channel and use RGB only
+            image = image / 255.0  # Normalize image to range [0, 1]
+            
+            # Convert the image to a PyTorch tensor
+            image = torch.tensor(image).permute(2, 0, 1).float()  # Convert shape from [H, W, C] to [C, H, W]
 
-            # Add batch dimension and move to device
+            # Add batch dimension (i.e., make it [1, C, H, W])
             image = image.unsqueeze(0).to(device).float()
 
             # Forward pass for prediction
             with torch.no_grad():
                 output = model(image)
 
-            # Get the class with highest probability
+            # Get the class with the highest probability
             predicted_class = torch.argmax(output, dim=1).squeeze(0)  # Remove batch dimension
             predicted_image = predicted_class.cpu().numpy().astype(np.uint8)
 
-            # Convert to PIL image and save
-            result_image = Image.fromarray(predicted_image * 51)  # Map class index to grayscale (5 shades)
+            # Map class index to grayscale (5 shades)
+            result_image = Image.fromarray(predicted_image * 51)  # Multiply by 51 to map to 5 grayscale shades
             result_image.save(os.path.join(output_dir, test_file.replace('.png', '_result.png')))
+    
     print("Prediction complete")
+
 
 
 # Predict on test images
