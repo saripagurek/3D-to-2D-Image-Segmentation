@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms
 from PIL import Image
 import os
@@ -10,6 +10,23 @@ import time
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
+import subprocess
+
+
+def remove_ds_store_files():
+    try:
+        # Run the find command
+        subprocess.run(
+            ['find', './data', '-name', '.DS_Store', '-type', 'f', '-delete'],
+            check=True
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"Error occurred while removing .DS_Store files: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+
+remove_ds_store_files()
 
 
 # Define the DoubleConv class for U-Net
@@ -124,43 +141,44 @@ transform = transforms.Compose([
 ])
 
 
-# Check unique labels in the first batch of the data loader
-def check_labels_in_batch(data_loader):
-    data_iter = iter(data_loader)
-    inputs, labels = next(data_iter)
-    
-    for idx in range(inputs.shape[0]):
-        unique_labels = torch.unique(labels[idx])
-        print(f"Unique labels for sample {idx}: {unique_labels.cpu().numpy()}")
-        
-# Load training and validation datasets
-train_dataset = SegmentationDataset(image_dir="data/train_images", label_dir="data/train_results", transform=transform)
+# Load full dataset
+full_dataset = SegmentationDataset(image_dir="data/train_images", label_dir="data/train_results", transform=transform)
+
+# Split the dataset into training & validation
+train_size = int(0.6 * len(full_dataset))
+val_size = len(full_dataset) - train_size
+train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
+
+# Create DataLoader for training and validation
 train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
-check_labels_in_batch(train_loader)
+val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False)
 
 
 # Initialize the model, loss function, and optimizer
 model = UNET(in_channels=3, out_channels=5)
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=1e-4)
+optimizer = optim.Adam(model.parameters(), lr=1e-5)
 
 # Check if GPU is available and move model to GPU if possible
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 print(f"Using device: {device}")
 
-# Training loop with time stamps and loss tracking
-def train_model(model, train_loader, criterion, optimizer, num_epochs=10):
+
+# Training and Validation loop
+def train_and_validate(model, train_loader, val_loader, criterion, optimizer, num_epochs=10):
     print("Training started")
     model.train()
     
-    epoch_losses = []
+    train_losses = []
+    val_losses = []
 
     for epoch in range(num_epochs):
         start_time = time.time()
         print(f"\nEpoch {epoch+1}/{num_epochs} started at {time.strftime('%H:%M:%S', time.gmtime(start_time))}")
 
-        running_loss = 0.0
+        # Training phase
+        running_train_loss = 0.0
         for i, (inputs, labels) in enumerate(train_loader):
             optimizer.zero_grad()
 
@@ -178,28 +196,56 @@ def train_model(model, train_loader, criterion, optimizer, num_epochs=10):
             loss.backward()
             optimizer.step()
 
-            running_loss += loss.item()
+            running_train_loss += loss.item()
 
-        # Store average loss for this epoch
-        epoch_loss = running_loss / len(train_loader)
-        epoch_losses.append(epoch_loss)
+        # Store average train loss for this epoch
+        train_loss = running_train_loss / len(train_loader)
+        train_losses.append(train_loss)
+
+        # Validation phase
+        model.eval()  # Set model to evaluation mode
+        running_val_loss = 0.0
+        with torch.no_grad():  # No gradients needed during validation
+            for inputs, labels in val_loader:
+                inputs = inputs.to(device).float()
+                labels = labels.to(device).long()
+
+                # Forward pass
+                outputs = model(inputs)
+
+                # Compute loss (raw logits)
+                loss = criterion(outputs, labels)
+                running_val_loss += loss.item()
+
+                # Convert raw logits to class predictions (only for visualization)
+                predicted_classes = torch.argmax(outputs, dim=1)
+
+
+        # Store average validation loss for this epoch
+        val_loss = running_val_loss / len(val_loader)
+        val_losses.append(val_loss)
+
 
         end_time = time.time()
-        print(f"Epoch {epoch+1} finished. Average Loss: {epoch_loss:.4f} at {time.strftime('%H:%M:%S', time.gmtime(end_time))}")
+        print(f"Epoch {epoch+1} finished. Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f} at {time.strftime('%H:%M:%S', time.gmtime(end_time))}")
 
-    return epoch_losses
+    return train_losses, val_losses
 
-# Train the model
-epoch_losses = train_model(model, train_loader, criterion, optimizer, num_epochs=15)
+
+# Train and validate the model
+train_losses, val_losses = train_and_validate(model, train_loader, val_loader, criterion, optimizer, num_epochs=7)
 
 # Plot the loss function over time (across epochs)
 plt.figure(figsize=(10, 5))
-plt.plot(range(1, len(epoch_losses) + 1), epoch_losses, marker='o')
-plt.title('Loss Function Over Epochs')
+plt.plot(range(1, len(train_losses) + 1), train_losses, marker='o', label='Training Loss')
+plt.plot(range(1, len(val_losses) + 1), val_losses, marker='o', label='Validation Loss')
+plt.title('Training vs Validation Loss Over Epochs')
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
+plt.legend()
 plt.grid(True)
 plt.show()
+
 
 # Inference on test images
 def predict(model, test_image_dir, output_dir):
