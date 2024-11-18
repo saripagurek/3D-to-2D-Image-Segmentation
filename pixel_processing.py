@@ -6,8 +6,8 @@ import os
 #directory_path = "UnprocessedImages/Shape1"
 #processed_dir = "ProcessedImages"
 
-directory_path = "UnprocessedImages/SmallBatch"
-processed_dir = "ProcessedImages/SmallBatch"
+directory_path = "UnprocessedImages/240x"
+processed_dir = "ProcessedImages/240x"
 
 
 white = [255, 255, 255, 255]

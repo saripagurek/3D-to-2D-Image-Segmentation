@@ -7,6 +7,8 @@ from PIL import Image
 import os
 import numpy as np
 import time
+import matplotlib.pyplot as plt
+
 
 # Define the UNet model with ReLU activation and CrossEntropy loss
 class UNetWithReLUAndCrossEntropyLoss(nn.Module):
@@ -70,9 +72,10 @@ class UNetWithReLUAndCrossEntropyLoss(nn.Module):
         return self.crop_like(final_out, x)
 
     def crop_like(self, x, target):
-        #Crop the input `x` to match the size of `target`
+        # Crop the input `x` to match the size of `target`
         _, _, h, w = target.size()
         return x[:, :, :h, :w]
+
 
 # Define a custom Dataset to load train and test images
 class SegmentationDataset(Dataset):
@@ -122,15 +125,42 @@ class SegmentationDataset(Dataset):
         return image, label_tensor
 
 
-
 # Define transformations (resize and convert to tensor)
 transform = transforms.Compose([
     transforms.ToTensor(),
 ])
 
+
+# Visualization function to show input image and label map
+def visualize_sample(input_image, label_map, idx):
+    """Visualize one input image and its label map"""
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+    
+    ax1.set_title(f"Input Image {idx}")
+    ax1.imshow(input_image.permute(1, 2, 0).cpu().numpy())  # Re-order to HWC for visualization
+    
+    ax2.set_title(f"Label Map {idx}")
+    ax2.imshow(label_map.cpu().numpy(), cmap='tab20')  # 'tab20' colormap for distinct regions
+    
+    plt.show()
+
+
+# Check unique labels in the first batch of the data loader
+def check_labels_in_batch(data_loader):
+    data_iter = iter(data_loader)
+    inputs, labels = next(data_iter)
+    
+    for idx in range(inputs.shape[0]):
+        unique_labels = torch.unique(labels[idx])
+        print(f"Unique labels for sample {idx}: {unique_labels.cpu().numpy()}")
+        
 # Load training and validation datasets
 train_dataset = SegmentationDataset(image_dir="data/train_images", label_dir="data/train_results", transform=transform)
 train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
+
+# Check the labels in the first batch
+check_labels_in_batch(train_loader)
+
 
 # Initialize the model, loss function, and optimizer
 model = UNetWithReLUAndCrossEntropyLoss(in_channels=3, out_channels=5)
@@ -182,9 +212,8 @@ def train_model(model, train_loader, criterion, optimizer, num_epochs=10):
         print(f"Epoch {epoch+1} finished. Average Loss: {running_loss/len(train_loader)}")
 
 
-train_model(model, train_loader, criterion, optimizer, num_epochs=10)
+train_model(model, train_loader, criterion, optimizer, num_epochs=15)
 
-# Inference on test images
 # Inference on test images
 def predict(model, test_image_dir, output_dir):
     print("Prediction started")
@@ -218,7 +247,6 @@ def predict(model, test_image_dir, output_dir):
             result_image.save(os.path.join(output_dir, test_file.replace('.png', '_result.png')))
     
     print("Prediction complete")
-
 
 
 # Predict on test images
