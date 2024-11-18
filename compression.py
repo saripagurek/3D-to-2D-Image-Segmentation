@@ -1,11 +1,11 @@
 from PIL import Image
 import os
 
-input_directory = "UnprocessedImages/Shape3"
-output_directory = "UnprocessedImages/240x/Shape3"
+input_directory = "UnprocessedImages/Shape1"
+output_directory = "UnprocessedImages/200x/Shape1"
 
-target_width = 240
-target_height = 135
+target_width = 200
+target_height = 200
 
 if not os.path.exists(output_directory):
     os.makedirs(output_directory)
@@ -26,26 +26,37 @@ def rename(directory, replace, replace_with):
 #rename(output_directory, "Shape_3", "Shape3")
 
 
-def resize_image(image_path, output_path, target_width, target_height):
-
+def resize_image(image_path, output_path, target_width, target_height, zoom_factor=1.4):
+    if zoom_factor < 1.0:
+        raise ValueError("Zoom factor must be greater than or equal to 1.0.")
+    
     with Image.open(image_path) as img:
-
         img_aspect_ratio = img.width / img.height
         target_aspect_ratio = target_width / target_height
         
-        # Resize the image while keeping it centered
-        if img_aspect_ratio > target_aspect_ratio:
-            # Image is wider than the target aspect ratio
-            new_width = target_width
-            new_height = int(target_width / img_aspect_ratio)
-        else:
-            # Image is taller than the target aspect ratio
-            new_height = target_height
-            new_width = int(target_height * img_aspect_ratio)
-        
-        img_resized = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        # Calculate cropping box for zoom
+        zoomed_width = img.width / zoom_factor
+        zoomed_height = img.height / zoom_factor
+        left = (img.width - zoomed_width) / 2
+        top = (img.height - zoomed_height) / 2
+        right = left + zoomed_width
+        bottom = top + zoomed_height
 
-        # Calculate the position to paste the image (centered)
+        img_zoomed = img.crop((left, top, right, bottom))
+        
+        # Resize the zoomed image to ensure it fills the target dimensions
+        img_zoomed_aspect_ratio = zoomed_width / zoomed_height
+        if img_zoomed_aspect_ratio > target_aspect_ratio:
+            new_height = target_height
+            new_width = int(target_height * img_zoomed_aspect_ratio)
+        else:
+            # Image is taller, fit width and crop height
+            new_width = target_width
+            new_height = int(target_width / img_zoomed_aspect_ratio)
+        
+        img_resized = img_zoomed.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        
+        # Calculate cropping box to center the image
         left = (new_width - target_width) // 2
         top = (new_height - target_height) // 2
         right = left + target_width

@@ -3,11 +3,8 @@ import numpy as np
 import os
 
 
-#directory_path = "UnprocessedImages/Shape1"
-#processed_dir = "ProcessedImages"
-
-directory_path = "UnprocessedImages/240x/Shape3"
-processed_dir = "ProcessedImages/240x/Shape3"
+directory_path = "UnprocessedImages/200x/Shape2"
+processed_dir = "ProcessedImages/200x/Shape2"
 
 
 white = [255, 255, 255, 255]
@@ -153,6 +150,7 @@ def get_files(directory):
         input = "" + directory_path + "/" + file + ".png"
         output = "" + processed_dir + "/" + file + "_edit.png"
         process_matcolour(input, output)
+        print(f'Processing {file}...')
 
     for file in illum_files:
         file = file[:-4]
@@ -162,18 +160,21 @@ def get_files(directory):
         input = "" + directory_path + "/" + file + ".png"
         output = "" + processed_dir + "/" + file + "_edit.png"
         process_illum(input, mat, output)
+        print(f'Processing {file}...')
 
     for file in shadow_files:
         file = file[:-4]
         input = "" + directory_path + "/" + file + ".png"
         output = "" + processed_dir + "/" + file + "_edit.png"
         process_shadow(input, output)
+        print(f'Processing {file}...')
 
     for file in specular_files:
         file = file[:-4]
         input = "" + directory_path + "/" + file + ".png"
         output = "" + processed_dir + "/" + file + "_edit.png"
         process_specular(input, output)
+        print(f'Processing {file}...')
 
     for file in input_files:
         if "png" in file:
@@ -193,6 +194,7 @@ def get_files(directory):
                 shadow,
                 spec
             )
+            print(f'Processing {file}...')
 
 
 
