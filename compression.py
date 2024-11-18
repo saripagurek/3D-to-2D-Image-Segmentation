@@ -1,14 +1,29 @@
 from PIL import Image
 import os
 
-input_directory = "UnprocessedImages/Shape1"
-output_directory = "UnprocessedImages/240x"
+input_directory = "UnprocessedImages/Shape3"
+output_directory = "UnprocessedImages/240x/Shape3"
 
 target_width = 240
 target_height = 135
 
 if not os.path.exists(output_directory):
     os.makedirs(output_directory)
+
+
+def rename(directory, replace, replace_with):
+    try:
+        for filename in os.listdir(directory):
+            if replace in filename:
+                new_filename = filename.replace(replace, replace_with)
+                old_path = os.path.join(directory, filename)
+                new_path = os.path.join(directory, new_filename)
+                os.rename(old_path, new_path)
+                print(f'Renamed: {filename} -> {new_filename}')
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+#rename(output_directory, "Shape_3", "Shape3")
 
 
 def resize_image(image_path, output_path, target_width, target_height):
