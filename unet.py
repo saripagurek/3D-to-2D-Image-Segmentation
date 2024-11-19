@@ -49,7 +49,7 @@ class DoubleConv(nn.Module):
 # Define the U-Net model
 class UNET(nn.Module):
     def __init__(
-            self, in_channels=3, out_channels=5, features=[64, 128, 256, 512],
+            self, in_channels=1, out_channels=5, features=[64, 128, 256, 512],
     ):
         super(UNET, self).__init__()
         self.ups = nn.ModuleList()
@@ -109,11 +109,11 @@ class SegmentationDataset(Dataset):
         return len(self.image_files)
 
     def __getitem__(self, idx):
-        # Load input image
+        # Load input image (grayscale)
         img_name = self.image_files[idx]
         img_path = os.path.join(self.image_dir, img_name)
-        image = Image.open(img_path).convert('RGBA')
-        
+        image = Image.open(img_path).convert('L')
+
         # Construct corresponding label image name
         label_name = img_name.replace('.png', '_output.png')
         label_path = os.path.join(self.label_dir, label_name)
@@ -122,7 +122,7 @@ class SegmentationDataset(Dataset):
 
         # Normalize label to integers (make sure they're within [0, 4])
         label = np.clip(label, 0, 4)
-        image = np.array(image)[:, :, :3]
+        image = np.array(image)
         image = image / 255.0
         label = label.astype(np.long)
 
@@ -155,7 +155,7 @@ val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False)
 
 
 # Initialize the model, loss function, and optimizer
-model = UNET(in_channels=3, out_channels=5)
+model = UNET(in_channels=1, out_channels=5)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-5)
 
@@ -205,7 +205,7 @@ def train_and_validate(model, train_loader, val_loader, criterion, optimizer, nu
         # Validation phase
         model.eval()  # Set model to evaluation mode
         running_val_loss = 0.0
-        with torch.no_grad():  # No gradients needed during validation
+        with torch.no_grad():
             for inputs, labels in val_loader:
                 inputs = inputs.to(device).float()
                 labels = labels.to(device).long()
@@ -233,7 +233,7 @@ def train_and_validate(model, train_loader, val_loader, criterion, optimizer, nu
 
 
 # Train and validate the model
-train_losses, val_losses = train_and_validate(model, train_loader, val_loader, criterion, optimizer, num_epochs=7)
+train_losses, val_losses = train_and_validate(model, train_loader, val_loader, criterion, optimizer, num_epochs=5)
 
 # Plot the loss function over time (across epochs)
 plt.figure(figsize=(10, 5))
@@ -255,17 +255,17 @@ def predict(model, test_image_dir, output_dir):
     for test_file in os.listdir(test_image_dir):
         if test_file.endswith('.png'):
             test_path = os.path.join(test_image_dir, test_file)
-            image = Image.open(test_path).convert('RGBA')
+            image = Image.open(test_path).convert('L')
 
             # Convert image to numpy array and normalize
-            image = np.array(image)[:, :, :3]
+            image = np.array(image)
             image = image / 255.0
             
             # Convert the image to a PyTorch tensor
-            image = torch.tensor(image).permute(2, 0, 1).float()
+            image = torch.tensor(image).unsqueeze(0).unsqueeze(0).float()  # Add batch and channel dimension
 
             # Add batch dimension
-            image = image.unsqueeze(0).to(device).float()
+            image = image.to(device).float()
 
             # Forward pass for prediction
             with torch.no_grad():

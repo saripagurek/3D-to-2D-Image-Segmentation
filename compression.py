@@ -1,14 +1,33 @@
 from PIL import Image
 import os
 
-input_directory = "UnprocessedImages/Shape1"
-output_directory = "UnprocessedImages/200x/Shape1"
+input_directory = "UnprocessedImages/200x/Shape3"
+output_directory = "UnprocessedImages/200x/Shape3"
 
 target_width = 200
 target_height = 200
 
 if not os.path.exists(output_directory):
     os.makedirs(output_directory)
+
+
+def convert_images_to_grayscale(input_dir, output_dir):
+
+    for filename in os.listdir(input_dir):
+        if filename.endswith('.png'):
+            input_path = os.path.join(input_dir, filename)
+            output_path = os.path.join(output_dir, filename)
+
+            try:
+                with Image.open(input_path) as img:
+                    grayscale_img = img.convert('L')
+                    grayscale_img.save(output_path)
+                    print(f"Converted and saved: {output_path}")
+            except Exception as e:
+                print(f"Error processing {input_path}: {e}")
+
+
+convert_images_to_grayscale(input_directory, output_directory)
 
 
 def rename(directory, replace, replace_with):
@@ -65,7 +84,7 @@ def resize_image(image_path, output_path, target_width, target_height, zoom_fact
         img_cropped = img_resized.crop((left, top, right, bottom))
         img_cropped.save(output_path, 'PNG', optimize=True)
 
-
+'''
 for filename in os.listdir(input_directory):
     if filename.lower().endswith('.png'):
         input_path = os.path.join(input_directory, filename)
@@ -75,3 +94,4 @@ for filename in os.listdir(input_directory):
         resize_image(input_path, output_path, target_width, target_height)
 
 print('Image resizing complete')
+'''
