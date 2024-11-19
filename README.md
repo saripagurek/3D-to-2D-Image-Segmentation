@@ -10,3 +10,6 @@ See the example below for the intended input and output of the model we wish to
 create.
 
 ![Example Image](example.png "Example")
+
+
+Notes about training: https://docs.google.com/document/d/1UR3cdtB8oMCLm-gZvn-QQyjIvpBqywMijAbCkbdImn0/edit?usp=sharing
