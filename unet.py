@@ -154,15 +154,61 @@ train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False)
 
 
+# Define a custom loss function that combines CrossEntropyLoss and Edge-Aware Regularization
+class CombinedLoss(nn.Module):
+    def __init__(self, weight_ce=1.0, weight_edge=0.0001):
+        super(CombinedLoss, self).__init__()
+        self.cross_entropy_loss = nn.CrossEntropyLoss()  # Standard CrossEntropyLoss
+        self.weight_ce = weight_ce  # The weight for the cross-entropy loss
+        self.weight_edge = weight_edge  # The weight for the edge loss term
+
+    def forward(self, outputs, labels):
+        # Compute the standard cross-entropy loss
+        ce_loss = self.cross_entropy_loss(outputs, labels)
+
+        # Compute the edge regularization loss
+        edge_loss = self.compute_edge_loss(outputs)
+
+        # Combine the losses with weights
+        total_loss = (self.weight_ce * ce_loss) + (self.weight_edge * edge_loss)
+        return total_loss
+
+    def compute_edge_loss(self, outputs):
+        """
+        Compute the edge loss based on the difference between adjacent pixels
+        using absolute difference (or squared difference if needed).
+        """
+        # Convert outputs to probabilities (logits -> softmax)
+        probs = torch.softmax(outputs, dim=1)  # Shape: [batch_size, num_classes, height, width]
+
+        # Get the horizontal and vertical pixel differences
+        diff_x = torch.abs(probs[:, :, 1:, :] - probs[:, :, :-1, :])  # Horizontal difference
+        diff_y = torch.abs(probs[:, :, :, 1:] - probs[:, :, :, :-1])  # Vertical difference
+
+        # Sum all differences in the image (across both directions)
+        edge_loss = (diff_x.sum() + diff_y.sum()) / (probs.shape[2] * probs.shape[3])
+
+        # Optionally, refine edge loss by focusing on regions near boundaries
+        # You could add a mask or a more targeted loss calculation if needed
+
+        return edge_loss
+
+
+
 # Initialize the model, loss function, and optimizer
 model = UNET(in_channels=1, out_channels=5)
-criterion = nn.CrossEntropyLoss()
+
+# Define the loss function
+# criterion = nn.CrossEntropyLoss()  # Original loss function (only CrossEntropyLoss)
+criterion = CombinedLoss()  # Combined loss (with edge loss)
+
 optimizer = optim.Adam(model.parameters(), lr=1e-5)
 
-# Check if GPU is available and move model to GPU if possible
+# Move the model to the appropriate device (GPU/CPU)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 print(f"Using device: {device}")
+
 
 
 # Training and Validation loop
