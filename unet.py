@@ -89,7 +89,10 @@ class UNET(nn.Module):
             skip_connection = skip_connections[idx // 2]
 
             if x.shape != skip_connection.shape:
-                x = TF.resize(x, size=skip_connection.shape[2:])
+                # (First line for CUDA GPU, second for MAC GPU)
+                #x = TF.resize(x, size=skip_connection.shape[2:])
+                x = F.interpolate(x, size=skip_connection.shape[2:], mode='bilinear', align_corners=False)
+
 
             concat_skip = torch.cat((skip_connection, x), dim=1)
             x = self.ups[idx + 1](concat_skip)
@@ -156,7 +159,7 @@ val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False)
 
 # Define a custom loss function that combines CrossEntropyLoss and Edge-Aware Regularization
 class CombinedLoss(nn.Module):
-    def __init__(self, weight_ce=1.0, weight_edge=0.01, weight_consistency=0.01):
+    def __init__(self, weight_ce=1.1, weight_edge=0.001, weight_consistency=0.1):
         super(CombinedLoss, self).__init__()
         self.cross_entropy_loss = nn.CrossEntropyLoss()  # Standard CrossEntropyLoss
         self.weight_ce = weight_ce  # The weight for the cross-entropy loss
@@ -245,8 +248,9 @@ criterion = CombinedLoss(weight_ce=1.1, weight_edge=0.001, weight_consistency=0.
 
 optimizer = optim.Adam(model.parameters(), lr=1e-5)
 
-# Move the model to the appropriate device (GPU/CPU)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# Move the model to the appropriate device (First line for CUDA GPU, second for MAC GPU)
+#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 model = model.to(device)
 print(f"Using device: {device}")
 
