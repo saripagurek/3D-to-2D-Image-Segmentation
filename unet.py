@@ -12,6 +12,8 @@ import torch.nn.functional as F
 import torchvision.transforms.functional as TF
 import subprocess
 
+num_epochs = 5
+
 
 def remove_ds_store_files():
     try:
@@ -24,10 +26,6 @@ def remove_ds_store_files():
         print(f"Error occurred while removing .DS_Store files: {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-
-
-remove_ds_store_files()
-
 
 # Define the DoubleConv class for U-Net
 class DoubleConv(nn.Module):
@@ -138,25 +136,6 @@ class SegmentationDataset(Dataset):
         return image, label_tensor
 
 
-# Define transformations (resize and convert to tensor)
-transform = transforms.Compose([
-    transforms.ToTensor(),
-])
-
-
-# Load full dataset
-full_dataset = SegmentationDataset(image_dir="data/train_images", label_dir="data/train_results", transform=transform)
-
-# Split the dataset into training & validation
-train_size = int(0.6 * len(full_dataset))
-val_size = len(full_dataset) - train_size
-train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
-
-# Create DataLoader for training and validation
-train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False)
-
-
 # Define a custom loss function that combines CrossEntropyLoss and Edge-Aware Regularization
 class CombinedLoss(nn.Module):
     def __init__(self, weight_ce=1.1, weight_edge=0.001, weight_consistency=0.1):
@@ -238,26 +217,8 @@ class CombinedLoss(nn.Module):
         return consistency_loss
 
 
-
-# Initialize the model, loss function, and optimizer
-model = UNET(in_channels=1, out_channels=5)
-
-# Define the loss function
-# criterion = nn.CrossEntropyLoss()  # Original loss function (only CrossEntropyLoss)
-criterion = CombinedLoss(weight_ce=1.1, weight_edge=0.001, weight_consistency=0.2)
-
-optimizer = optim.Adam(model.parameters(), lr=1e-5)
-
-# Move the model to the appropriate device (First line for CUDA GPU, second for MAC GPU)
-#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-model = model.to(device)
-print(f"Using device: {device}")
-
-
-
 # Training and Validation loop
-def train_and_validate(model, train_loader, val_loader, criterion, optimizer, num_epochs=10):
+def train_and_validate(model, train_loader, val_loader, criterion, optimizer, num_epochs=10, device=None):
     print("Training started")
     model.train()
     
@@ -296,6 +257,9 @@ def train_and_validate(model, train_loader, val_loader, criterion, optimizer, nu
         # Validation phase
         model.eval()  # Set model to evaluation mode
         running_val_loss = 0.0
+
+        average_time_taken = 0.0
+
         with torch.no_grad():
             for inputs, labels in val_loader:
                 inputs = inputs.to(device).float()
@@ -318,28 +282,26 @@ def train_and_validate(model, train_loader, val_loader, criterion, optimizer, nu
 
 
         end_time = time.time()
-        print(f"Epoch {epoch+1} finished. Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f} at {time.strftime('%H:%M:%S', time.gmtime(end_time))}")
+
+        #get the time taken for the epoch
+        time_taken = end_time - start_time
+
+        print(f"Epoch {epoch+1} finished. Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f} at {time.strftime('%H:%M:%S', time.gmtime(end_time))} (Took {time_taken:.2f} seconds to run)")
+
+        torch.save(model.state_dict(), "weights/weights_" + str(epoch) + ".pth")
+
+    print("Training complete")
+
+    average_time_taken = average_time_taken / num_epochs
+    print(f"Average time taken per epoch: {average_time_taken:.2f} seconds")
 
     return train_losses, val_losses
 
 
-# Train and validate the model
-train_losses, val_losses = train_and_validate(model, train_loader, val_loader, criterion, optimizer, num_epochs=5)
-
-# Plot the loss function over time (across epochs)
-plt.figure(figsize=(10, 5))
-plt.plot(range(1, len(train_losses) + 1), train_losses, marker='o', label='Training Loss')
-plt.plot(range(1, len(val_losses) + 1), val_losses, marker='o', label='Validation Loss')
-plt.title('Training vs Validation Loss Over Epochs')
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-plt.legend()
-plt.grid(True)
-plt.show()
 
 
 # Inference on test images
-def predict(model, test_image_dir, output_dir):
+def predict(model, test_image_dir, output_dir, device=None):
     print("Prediction started")
     model.eval()
     
@@ -372,5 +334,81 @@ def predict(model, test_image_dir, output_dir):
     
     print("Prediction complete")
 
-# Predict on test images
-predict(model, test_image_dir="data/test_images", output_dir="data/test_results")
+
+
+def main():
+
+    remove_ds_store_files()
+
+
+    # Define transformations (resize and convert to tensor)
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+    ])
+
+
+    # Load full dataset
+    full_dataset = SegmentationDataset(image_dir="data/train_images", label_dir="data/train_results", transform=transform)
+
+    # Split the dataset into training & validation
+    train_size = int(0.6 * len(full_dataset))
+    val_size = len(full_dataset) - train_size
+    train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
+
+    # Create DataLoader for training and validation
+    train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False)
+
+
+    # Initialize the model, loss function, and optimizer
+    model = UNET(in_channels=1, out_channels=5)
+
+    # Define the loss function
+    # criterion = nn.CrossEntropyLoss()  # Original loss function (only CrossEntropyLoss)
+    criterion = CombinedLoss(weight_ce=1.1, weight_edge=0.001, weight_consistency=0.2)
+
+    optimizer = optim.Adam(model.parameters(), lr=1e-5)
+
+    # Move the model to the appropriate device (First line for CUDA GPU, second for MAC GPU)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    model = model.to(device)
+    print(f"Using device: {device}")
+
+
+
+    #Ask the user if they want to train the model or load weights
+    train = input("Do you want to train the model? (y/n): ")
+    if train == 'y':
+        # Train and validate the model
+        train_losses, val_losses = train_and_validate(model, train_loader, val_loader, criterion, optimizer, num_epochs, device)
+
+        # Plot the loss function over time (across epochs)
+        plt.figure(figsize=(10, 5))
+        plt.plot(range(1, len(train_losses) + 1), train_losses, marker='o', label='Training Loss')
+        plt.plot(range(1, len(val_losses) + 1), val_losses, marker='o', label='Validation Loss')
+        plt.title('Training vs Validation Loss Over Epochs')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+    else:
+        # Load the weights from the last epoch
+        model.load_state_dict(torch.load("weights/weights_4.pth"))
+        print("Weights loaded from the last epoch")
+
+
+
+    # Predict on test images
+    print("Predicting on test images")
+    predict(model, test_image_dir="data/test_images", output_dir="data/test_results", device=device)
+
+    #predict on a training image
+    print("Predicting on training images")
+    predict(model, test_image_dir="data/train_images", output_dir="data/dump", device=device)
+
+
+
+if __name__ == "__main__":
+    main()
