@@ -16,6 +16,7 @@ from CombinedLoss import CombinedLoss
 from SegmentationDataset import SegmentationDataset
 
 num_epochs = 5
+batch_size = 16
 
 
 def remove_ds_store_files():
@@ -108,18 +109,19 @@ class UNET(nn.Module):
 # Training and Validation loop
 def train_and_validate(model, train_loader, val_loader, criterion, optimizer, num_epochs=10, device=None):
     print("Training started")
-    model.train()
     
     train_losses = []
     val_losses = []
 
     for epoch in range(num_epochs):
+        model.train()
         start_time = time.time()
         print(f"\nEpoch {epoch+1}/{num_epochs} started at {time.strftime('%H:%M:%S', time.gmtime(start_time))}")
 
         # Training phase
         running_train_loss = 0.0
         for i, (inputs, labels) in enumerate(train_loader):
+            print(f"Batch {i+1}/{len(train_loader)}", end='\r')
             optimizer.zero_grad()
 
             # Ensure the input tensors are on the right device and of the right type
@@ -253,8 +255,8 @@ def main():
     train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
 
     # Create DataLoader for training and validation
-    train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
 
     # Initialize the model, loss function, and optimizer
@@ -278,6 +280,8 @@ def main():
     train = input("Do you want to train the model? (y/n): ")
     if train == 'y':
         # Train and validate the model
+        print("Training on ", len(train_loader), " batches for ", num_epochs, " epochs")
+
         train_losses, val_losses = train_and_validate(model, train_loader, val_loader, criterion, optimizer, num_epochs, device)
 
         # Plot the loss function over time (across epochs)
