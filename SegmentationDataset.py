@@ -7,6 +7,10 @@ from PIL import Image
 import os
 import numpy as np
 
+# Taken from pixel_processing.py
+# CLASSES = [SHADOW, CAST_SHADOW, MIDTONE, HIGHLIGHT, BACKROUND]
+greyColours = [40, 80, 125, 255, 200]
+
 # Define a custom Dataset to load train and test images
 class SegmentationDataset(Dataset):
     def __init__(self, image_dir, label_dir, transform=None, labelTransform=None):
@@ -32,7 +36,9 @@ class SegmentationDataset(Dataset):
         label = np.array(label)
 
         # Normalize label to integers (make sure they're within [0, 4])
-        label = np.clip(label, 0, 4)
+        for colour in greyColours:
+            label[label == colour] = greyColours.index(colour)
+
         image = np.array(image)
         image = image / 255.0
         label = label.astype(np.long)
