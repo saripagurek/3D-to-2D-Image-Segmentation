@@ -232,7 +232,9 @@ def predict(model, test_image_dir, output_dir, device=None):
             predicted_image = predicted_class.cpu().numpy().astype(np.uint8)
 
             # Map class index to grayscale (5 shades)
-            result_image = Image.fromarray(predicted_image * 51)
+            for i, colour in enumerate(greyColours):
+                predicted_image[predicted_image == i] = colour
+            result_image = Image.fromarray(predicted_image)
             result_image.save(os.path.join(output_dir, test_file.replace('.png', '_result.png')))
     
     print("Prediction complete")
@@ -303,7 +305,7 @@ def main():
         plt.show()
     else:
         # Load the weights from the last epoch
-        model.load_state_dict(torch.load("weights/weights_4.pth"))
+        model.load_state_dict(torch.load("weights/weights_14.pth"))
         print("Weights loaded from the last epoch")
 
 
