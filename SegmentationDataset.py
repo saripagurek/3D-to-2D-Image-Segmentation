@@ -38,10 +38,13 @@ class SegmentationDataset(Dataset):
         # Normalize label to integers (make sure they're within [0, 4])
         for colour in greyColours:
             label[label == colour] = greyColours.index(colour)
+        
+        # One-hot encode the label
+        label = np.eye(5)[label]
+        label = label.transpose((2, 0, 1))
 
         image = np.array(image)
         image = image / 255.0
-        label = label.astype(np.long)
 
         # Apply transformations
         if self.transform:
@@ -50,6 +53,6 @@ class SegmentationDataset(Dataset):
 
         # if self.labelTransform:
         #     label_tensor = self.labelTransform(label_tensor)
-        label_tensor = torch.from_numpy(label).long()
+        label_tensor = torch.from_numpy(label).float()
 
         return image, label_tensor

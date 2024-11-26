@@ -15,8 +15,12 @@ import subprocess
 from CombinedLoss import CombinedLoss
 from SegmentationDataset import SegmentationDataset
 
-num_epochs = 5
-batch_size = 16
+# CLASSES = [SHADOW, CAST_SHADOW, MIDTONE, HIGHLIGHT, BACKROUND]
+greyColours = [40, 80, 125, 255, 200]
+
+num_epochs = 15
+batch_size = 32
+learning_rate = 1e-4
 
 
 def remove_ds_store_files():
@@ -100,9 +104,6 @@ class UNET(nn.Module):
             x = self.ups[idx + 1](concat_skip)
 
         x = self.final_conv(x)
-        # print(x.shape)
-        # print(x)
-        # exit()
 
         return x
 
@@ -126,17 +127,10 @@ def train_and_validate(model, train_loader, val_loader, criterion, optimizer, nu
 
             # Ensure the input tensors are on the right device and of the right type
             inputs = inputs.to(device).float()
-            labels = labels.to(device).long()
+            labels = labels.to(device)
 
             # Forward pass
             outputs = model(inputs)
-
-            # print(outputs.shape)
-            # print(labels.shape)
-            # print(labels[0][100])
-            # print(torch.nn.functional.one_hot(labels, num_classes=5).shape)
-            # print(torch.nn.functional.one_hot(labels, num_classes=5))
-            # exit()
 
             # Compute loss
             loss = criterion(outputs, labels)
@@ -160,7 +154,7 @@ def train_and_validate(model, train_loader, val_loader, criterion, optimizer, nu
         with torch.no_grad():
             for inputs, labels in val_loader:
                 inputs = inputs.to(device).float()
-                labels = labels.to(device).long()
+                labels = labels.to(device)
 
                 # Forward pass
                 outputs = model(inputs)
@@ -177,7 +171,6 @@ def train_and_validate(model, train_loader, val_loader, criterion, optimizer, nu
         val_loss = running_val_loss / len(val_loader)
         val_losses.append(val_loss)
 
-
         end_time = time.time()
 
         #get the time taken for the epoch
@@ -186,6 +179,19 @@ def train_and_validate(model, train_loader, val_loader, criterion, optimizer, nu
         print(f"Epoch {epoch+1} finished. Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f} at {time.strftime('%H:%M:%S', time.gmtime(end_time))} (Took {time_taken:.2f} seconds to run)")
 
         torch.save(model.state_dict(), "weights/weights_" + str(epoch) + ".pth")
+
+        # Save a loss plot
+        fig = plt.figure(figsize=(10, 5))
+        plt.plot(range(1, len(train_losses) + 1), train_losses, marker='o', label='Training Loss')
+        plt.plot(range(1, len(val_losses) + 1), val_losses, marker='o', label='Validation Loss')
+        plt.title('Training vs Validation Loss Over Epochs')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig("loss_plot.png")
+        plt.close(fig)
+
 
     print("Training complete")
 
@@ -250,7 +256,7 @@ def main():
                                        )
 
     # Split the dataset into training & validation
-    train_size = int(0.6 * len(full_dataset))
+    train_size = int(0.7 * len(full_dataset))
     val_size = len(full_dataset) - train_size
     train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
 
@@ -266,7 +272,7 @@ def main():
     criterion = nn.CrossEntropyLoss()  # Original loss function (only CrossEntropyLoss)
     # criterion = CombinedLoss(weight_ce=1.1, weight_edge=0.001, weight_consistency=0.2)
 
-    optimizer = optim.Adam(model.parameters(), lr=1e-5)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     # Move the model to the appropriate device (First line for CUDA GPU, second for MAC GPU)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -278,6 +284,7 @@ def main():
 
     #Ask the user if they want to train the model or load weights
     train = input("Do you want to train the model? (y/n): ")
+    # train = "y"
     if train == 'y':
         # Train and validate the model
         print("Training on ", len(train_loader), " batches for ", num_epochs, " epochs")
