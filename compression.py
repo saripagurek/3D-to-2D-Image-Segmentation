@@ -1,8 +1,8 @@
 from PIL import Image
 import os
 
-input_directory = "UnprocessedImages/Shape8"
-output_directory = "UnprocessedImages/200x/Shape8"
+input_directory = "UnprocessedImages/Shape16"
+output_directory = "UnprocessedImages/200x/Shape16"
 
 target_width = 200
 target_height = 200
