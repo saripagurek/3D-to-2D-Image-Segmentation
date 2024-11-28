@@ -1,8 +1,8 @@
 from PIL import Image
 import os
 
-input_directory = "UnprocessedImages/Shape16"
-output_directory = "UnprocessedImages/200x/Shape16"
+input_directory = "UnprocessedImages/200x/Shape4"
+output_directory = "UnprocessedImages/200x/Shape4"
 
 target_width = 200
 target_height = 200
@@ -27,7 +27,7 @@ def convert_images_to_grayscale(input_dir, output_dir):
                 print(f"Error processing {input_path}: {e}")
 
 
-convert_images_to_grayscale(input_directory, output_directory)
+# convert_images_to_grayscale(input_directory, output_directory)
 
 
 def rename(directory, replace, replace_with):
@@ -45,7 +45,7 @@ def rename(directory, replace, replace_with):
 #rename(output_directory, "Shape_3", "Shape3")
 
 
-def resize_image(image_path, output_path, target_width, target_height, zoom_factor=1.4):
+def resize_image(image_path, output_path, target_width, target_height, zoom_factor=1.5):
     if zoom_factor < 1.0:
         raise ValueError("Zoom factor must be greater than or equal to 1.0.")
     
@@ -84,7 +84,7 @@ def resize_image(image_path, output_path, target_width, target_height, zoom_fact
         img_cropped = img_resized.crop((left, top, right, bottom))
         img_cropped.save(output_path, 'PNG', optimize=True)
 
-'''
+
 for filename in os.listdir(input_directory):
     if filename.lower().endswith('.png'):
         input_path = os.path.join(input_directory, filename)
@@ -94,4 +94,3 @@ for filename in os.listdir(input_directory):
         resize_image(input_path, output_path, target_width, target_height)
 
 print('Image resizing complete')
-'''
