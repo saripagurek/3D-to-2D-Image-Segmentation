@@ -3,8 +3,8 @@ import numpy as np
 import os
 
 
-directory_path = "UnprocessedImages/200x/Shape4"
-processed_dir = "ProcessedImages/200x/Shape4"
+directory_path = "UnprocessedImages/200x/Shape10"
+processed_dir = "ProcessedImages/200x/Shape10"
 
 # Treating these as hardcoded, if these change, need to change the SegmentationDataset:11
 white = [255, 255, 255, 255]
