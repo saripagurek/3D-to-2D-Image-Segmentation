@@ -47,7 +47,7 @@ def process_matcolour(input_path, output_path):
             r, g, b, a = data[y, x]
 
             # If pixel isn't black or white, set to mid tone
-            if (r < 20 and g < 20 and b < 20) or (r >= 210 and g >= 210 and b >= 210):
+            if (r < 1 and g < 5 and b < 5) or (r >= 210 and g >= 210 and b >= 210):
                 # need a better way to remove the horizon line?
                 data[y, x] = trns
             else:
