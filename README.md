@@ -13,8 +13,8 @@ create.
 
 With frame by frame processing, an example output:
 
-![Example Image](Examplesexample_Shape6_input.gif "Example")
-![Example Image](Examplesexample_Shape6.gif "Example")
+![Example Image](Examples/example_Shape6_input.gif "Example")
+![Example Image](Examples/example_Shape6.gif "Example")
 
 
 Notes about training: https://docs.google.com/document/d/1UR3cdtB8oMCLm-gZvn-QQyjIvpBqywMijAbCkbdImn0/edit?usp=sharing
