@@ -10,7 +10,6 @@ import time
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
-import subprocess
 
 from CombinedLoss import CombinedLoss
 from SegmentationDataset import SegmentationDataset
@@ -22,18 +21,6 @@ num_epochs = 15
 batch_size = 32
 learning_rate = 1e-4
 
-
-def remove_ds_store_files():
-    try:
-        # Run the find command
-        subprocess.run(
-            ['find', './data', '-name', '.DS_Store', '-type', 'f', '-delete'],
-            check=True
-        )
-    except subprocess.CalledProcessError as e:
-        print(f"Error occurred while removing .DS_Store files: {e}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
 
 # Define the DoubleConv class for U-Net
 class DoubleConv(nn.Module):
@@ -242,8 +229,6 @@ def predict(model, test_image_dir, output_dir, device=None):
 
 
 def main():
-
-    remove_ds_store_files()
 
 
     # Define transformations (resize and convert to tensor)
