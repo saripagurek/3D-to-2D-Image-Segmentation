@@ -7,9 +7,11 @@ from PIL import Image
 import os
 import numpy as np
 
+
 # Taken from pixel_processing.py
 # CLASSES = [SHADOW, CAST_SHADOW, MIDTONE, HIGHLIGHT, BACKROUND]
 greyColours = [40, 80, 125, 255, 200]
+
 
 # Define a custom Dataset to load train and test images
 class SegmentationDataset(Dataset):
@@ -51,8 +53,6 @@ class SegmentationDataset(Dataset):
             image = self.transform(image)
         image = image.float()
 
-        # if self.labelTransform:
-        #     label_tensor = self.labelTransform(label_tensor)
         label_tensor = torch.from_numpy(label).float()
 
         return image, label_tensor

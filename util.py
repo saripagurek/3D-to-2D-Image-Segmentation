@@ -3,6 +3,8 @@ import os
 import shutil
 import subprocess
 
+
+# Remove ds store files if on mac before running unet.py to avoid file confusion
 def remove_ds_store_files():
     try:
         # Run the find command
@@ -15,6 +17,8 @@ def remove_ds_store_files():
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
+
+# Stitch a directory of frames together, output as a gif file
 def create_gif_from_pngs(input_dir, output_path, fps=30):
     duration = int(1000 / fps)
     
@@ -35,6 +39,8 @@ def create_gif_from_pngs(input_dir, output_path, fps=30):
     )
     print(f"GIF saved at {output_path}")
 
+
+# Helper function to copy files to a directory
 def copy_files(src_dirs, dst_dir, condition):
 
     for src_dir in src_dirs:
@@ -51,6 +57,8 @@ def copy_files(src_dirs, dst_dir, condition):
                 else:
                     print(f"Skipped file (not .png): {file_path}")
 
+
+# Util function to set up train images, train results, and test images into the correct ./data directories before unet.py training
 def organize_files(list_of_train_images, list_of_train_labels, list_of_tests, output_dir="./data"):
 
     # Output directories
@@ -73,18 +81,21 @@ def organize_files(list_of_train_images, list_of_train_labels, list_of_tests, ou
     print("Completed copying test_images.\n")
 
 
-# Organize shapes to train vs test
+# Change this list of train images if you wish to train on different data
 path_to_train_images = [
     "./UnprocessedImages/200x/Shape1",
     "./UnprocessedImages/200x/Shape2",
     "./UnprocessedImages/200x/Shape3"
 ]
+
+# This list must match the above list to ensure there is a correct label for each input image
 path_to_train_labels = [
     "./ProcessedImages/200x/Shape1",
     "./ProcessedImages/200x/Shape2",
     "./ProcessedImages/200x/Shape3"
 ]
 path_to_tests = ["./UnprocessedImages/200x/Shape4"]
+
 
 #organize_files(path_to_train_images, path_to_train_labels, path_to_tests)
 

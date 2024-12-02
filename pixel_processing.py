@@ -3,8 +3,10 @@ import numpy as np
 import os
 
 
+# Change these paths to reflect the input and output directories to be processed
 directory_path = "UnprocessedImages/200x/Shape16"
 processed_dir = "ProcessedImages/200x/Shape16"
+
 
 # Treating these as hardcoded, if these change, need to change the SegmentationDataset:11
 white = [255, 255, 255, 255]
@@ -14,6 +16,7 @@ shadow = [80, 80, 80, 255]
 cast_shadow = [40, 40, 40, 255]
 
 
+# Function processes specular layer from multipass render
 def process_specular(input_path, output_path):
     image = Image.open(input_path)
     image = image.convert('RGBA')
@@ -35,6 +38,7 @@ def process_specular(input_path, output_path):
     manipulated_image.save(output_path)
 
 
+# Function processes material colour layer from multipass render
 def process_matcolour(input_path, output_path):
     image = Image.open(input_path)
     image = image.convert('RGBA')
@@ -48,7 +52,6 @@ def process_matcolour(input_path, output_path):
 
             # If pixel isn't black or white, set to mid tone
             if (r < 1 and g < 5 and b < 5) or (r >= 210 and g >= 210 and b >= 210):
-                # need a better way to remove the horizon line?
                 data[y, x] = trns
             else:
                 data[y, x] = midtone
@@ -57,6 +60,7 @@ def process_matcolour(input_path, output_path):
     manipulated_image.save(output_path)
 
 
+# Function processes shadow layer from multipass render
 def process_shadow(input_path, output_path):
     image = Image.open(input_path)
     image = image.convert('RGBA')
@@ -78,6 +82,7 @@ def process_shadow(input_path, output_path):
     manipulated_image.save(output_path)
 
 
+# Function processes illumination layer from multipass render
 def process_illum(input_path, mat_path, output_path):
     image = Image.open(input_path)
     image = image.convert('RGBA')
@@ -107,6 +112,7 @@ def process_illum(input_path, mat_path, output_path):
     manipulated_image.save(output_path)
 
 
+# Composite each processed layer back together, add background layer
 def combine_layers(output_path, *input_paths):
     base_image = None
 
@@ -121,6 +127,7 @@ def combine_layers(output_path, *input_paths):
     base_image.save(output_path)
 
 
+# Process all multipass render layers in a given directory, then combine
 def get_files(directory):
     matcolour_files = []
     illum_files = []
@@ -199,20 +206,3 @@ def get_files(directory):
 
 
 get_files(directory_path)
-
-
-
-'''
-process_specular('test_specular.png', 'test_specular_edit.png')
-process_matcolour('test_matcolour.png', 'test_matcolour_edit.png')
-process_shadow('test_shadow.png', 'test_shadow_edit.png')
-process_illum('test_illum.png', 'test_matcolour_edit.png', 'test_illum_edit.png')
-
-combine_layers(
-    'final_output.png',
-    'test_matcolour_edit.png',
-    'test_illum_edit.png',
-    'test_shadow_edit.png',
-    'test_specular_edit.png'
-)
-'''

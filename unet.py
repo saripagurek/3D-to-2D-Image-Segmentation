@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
 
-from CombinedLoss import CombinedLoss
-from SegmentationDataset import SegmentationDataset
+from segmentation_dataset import SegmentationDataset
+
 
 # CLASSES = [SHADOW, CAST_SHADOW, MIDTONE, HIGHLIGHT, BACKROUND]
 greyColours = [40, 80, 125, 255, 200]
@@ -93,6 +93,7 @@ class UNET(nn.Module):
         x = self.final_conv(x)
 
         return x
+    
 
 # Training and Validation loop
 def train_and_validate(model, train_loader, val_loader, criterion, optimizer, num_epochs=10, device=None):
@@ -153,7 +154,6 @@ def train_and_validate(model, train_loader, val_loader, criterion, optimizer, nu
                 # Convert raw logits to class predictions (only for visualization)
                 predicted_classes = torch.argmax(outputs, dim=1)
 
-
         # Store average validation loss for this epoch
         val_loss = running_val_loss / len(val_loader)
         val_losses.append(val_loss)
@@ -179,15 +179,12 @@ def train_and_validate(model, train_loader, val_loader, criterion, optimizer, nu
         plt.savefig("loss_plot.png")
         plt.close(fig)
 
-
     print("Training complete")
 
     average_time_taken = average_time_taken / num_epochs
     print(f"Average time taken per epoch: {average_time_taken:.2f} seconds")
 
     return train_losses, val_losses
-
-
 
 
 # Inference on test images
@@ -227,21 +224,18 @@ def predict(model, test_image_dir, output_dir, device=None):
     print("Prediction complete")
 
 
-
 def main():
-
 
     # Define transformations (resize and convert to tensor)
     transform = transforms.Compose([
         transforms.ToTensor(),
     ])
 
-
     # Load full dataset
     full_dataset = SegmentationDataset(image_dir="data/train_images", label_dir="data/train_results", transform=transform, 
                                        labelTransform=None
                                        )
-
+    
     # Split the dataset into training & validation
     train_size = int(0.8 * len(full_dataset))
     val_size = len(full_dataset) - train_size
@@ -256,8 +250,7 @@ def main():
     model = UNET(in_channels=1, out_channels=5)
 
     # Define the loss function
-    criterion = nn.CrossEntropyLoss()  # Original loss function (only CrossEntropyLoss)
-    # criterion = CombinedLoss(weight_ce=1.1, weight_edge=0.001, weight_consistency=0.2)
+    criterion = nn.CrossEntropyLoss()
 
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
@@ -266,8 +259,6 @@ def main():
     #device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     model = model.to(device)
     print(f"Using device: {device}")
-
-
 
     #Ask the user if they want to train the model or load weights
     train = input("Do you want to train the model? (y/n): ")
@@ -294,8 +285,6 @@ def main():
         # Load the weights from the last epoch
         model.load_state_dict(torch.load("weights/weights_" + str(int(epoch) - 1) + ".pth"))
 
-
-
     # Predict on test images
     print("Predicting on test images")
     predict(model, test_image_dir="data/test_images", output_dir="data/test_results", device=device)
@@ -303,7 +292,6 @@ def main():
     #predict on a training image
     print("Predicting on training images")
     predict(model, test_image_dir="data/train_images", output_dir="data/dump", device=device)
-
 
 
 if __name__ == "__main__":

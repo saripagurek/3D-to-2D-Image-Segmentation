@@ -1,16 +1,19 @@
 from PIL import Image
 import os
 
+
 input_directory = "UnprocessedImages/200x/Shape4"
 output_directory = "UnprocessedImages/200x/Shape4"
 
 target_width = 200
 target_height = 200
 
+
 if not os.path.exists(output_directory):
     os.makedirs(output_directory)
 
 
+# Convert a directory of RGBA format images to Greyscale
 def convert_images_to_grayscale(input_dir, output_dir):
 
     for filename in os.listdir(input_dir):
@@ -26,10 +29,10 @@ def convert_images_to_grayscale(input_dir, output_dir):
             except Exception as e:
                 print(f"Error processing {input_path}: {e}")
 
-
 # convert_images_to_grayscale(input_directory, output_directory)
 
 
+# Helper function to ensure correct naming conventions
 def rename(directory, replace, replace_with):
     try:
         for filename in os.listdir(directory):
@@ -45,6 +48,7 @@ def rename(directory, replace, replace_with):
 #rename(output_directory, "Shape_3", "Shape3")
 
 
+# Crop, zoom, and resize a directory of images
 def resize_image(image_path, output_path, target_width, target_height, zoom_factor=1.5):
     if zoom_factor < 1.0:
         raise ValueError("Zoom factor must be greater than or equal to 1.0.")
