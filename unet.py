@@ -18,7 +18,7 @@ from SegmentationDataset import SegmentationDataset
 # CLASSES = [SHADOW, CAST_SHADOW, MIDTONE, HIGHLIGHT, BACKROUND]
 greyColours = [40, 80, 125, 255, 200]
 
-num_epochs = 15
+num_epochs = 50
 batch_size = 32
 learning_rate = 1e-4
 
@@ -258,7 +258,7 @@ def main():
                                        )
 
     # Split the dataset into training & validation
-    train_size = int(0.7 * len(full_dataset))
+    train_size = int(0.8 * len(full_dataset))
     val_size = len(full_dataset) - train_size
     train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
 
@@ -304,9 +304,10 @@ def main():
         plt.grid(True)
         plt.show()
     else:
+        epoch = input("Which epoch do you want to load the weights from?: ")
+
         # Load the weights from the last epoch
-        model.load_state_dict(torch.load("weights/weights_14.pth"))
-        print("Weights loaded from the last epoch")
+        model.load_state_dict(torch.load("weights/weights_" + str(int(epoch) - 1) + ".pth"))
 
 
 

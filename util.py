@@ -1,14 +1,14 @@
 from PIL import Image
 import os
 
-directory_path = "UnprocessedImages/200x/Shape6"
+directory_path = "ProcessedImages/200x/Shape2"
 processed_dir = "example.gif"
 
 def create_gif_from_pngs(input_dir, output_path, fps=30):
     duration = int(1000 / fps)
     
     png_files = sorted([f for f in os.listdir(input_dir) if (f.endswith('.png'))])
-    png_files = png_files[:89]
+    png_files = png_files[:91]
     if not png_files:
         raise ValueError("No PNG images found in the specified directory.")
     
