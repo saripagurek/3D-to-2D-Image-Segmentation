@@ -17,7 +17,7 @@ To test it out yourself, organize the images you would like to test on into ./da
 
 The other folders in ./data train_images and train_results contain the data that is used in the train and validation sets.
 
-# File set up:
+## File Setup
 - In ./UnprocessedImages you will find all the raw images we exported from Cinema4D's multipass renderer sorted by scene (ie. Shape)
 - In ./ProcessedImages you will find all the edited images after having been ran through pixel_processing.py
 - unet.py contains the U-Net model as well as the training loop and prediction
@@ -26,14 +26,14 @@ The other folders in ./data train_images and train_results contain the data that
 - compression.py contains functions to assist with cropping and resizing
 - util.py contains other utility functions such as file organization, and stitching frames back together into a gif
 
-# Install dependencies:
+## Dependencies
 - pytorch
 - torchvision
 - pillow
 - numpy
 - matplotlib
 
-# To run:
+## To Run
 
 After your desired file organization, run $ python3 unet.py 
 
