@@ -186,6 +186,24 @@ def train_and_validate(model, train_loader, val_loader, criterion, optimizer, nu
 
     return train_losses, val_losses
 
+def test(model, test_loader, criterion, device=None):
+    print("Testing started")
+    model.eval()
+    running_test_loss = 0.0
+
+    with torch.no_grad():
+        for inputs, labels in test_loader:
+            inputs = inputs.to(device).float()
+            labels = labels.to(device)
+
+            # Forward pass
+            outputs = model(inputs)
+
+            # Compute loss (raw logits)
+            loss = criterion(outputs, labels)
+            running_test_loss += loss.item()
+
+    print("Test loss: ", running_test_loss / len(test_loader))
 
 # Inference on test images
 def predict(model, test_image_dir, output_dir, device=None):
@@ -235,6 +253,7 @@ def main():
     full_dataset = SegmentationDataset(image_dir="data/train_images", label_dir="data/train_results", transform=transform, 
                                        labelTransform=None
                                        )
+    test_dataset = SegmentationDataset(image_dir="data/test_images", label_dir="data/test_labels", transform=transform)
     
     # Split the dataset into training & validation
     train_size = int(0.8 * len(full_dataset))
@@ -244,6 +263,7 @@ def main():
     # Create DataLoader for training and validation
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 
     # Initialize the model, loss function, and optimizer
@@ -284,6 +304,9 @@ def main():
 
         # Load the weights from the last epoch
         model.load_state_dict(torch.load("weights/weights_" + str(int(epoch) - 1) + ".pth"))
+
+    # Test the model
+    test(model, test_loader, criterion, device=device)
 
     # Predict on test images
     print("Predicting on test images")
