@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image, ImageSequence
 import os
 import shutil
 import subprocess
@@ -38,6 +38,52 @@ def create_gif_from_pngs(input_dir, output_path, fps=30):
         loop=0
     )
     print(f"GIF saved at {output_path}")
+
+
+# Stitches two GIFs side by side and saves the resulting GIF
+def stitch_gifs_side_by_side(gif1_path, gif2_path, output_path):
+
+    gif1 = Image.open(gif1_path)
+    gif2 = Image.open(gif2_path)
+
+    # Check if resolutions match
+    if gif1.size[1] != gif2.size[1]:
+        raise ValueError("The heights of the two GIFs must match.")
+
+    # Create a new blank image with the combined width
+    combined_width = gif1.width + gif2.width
+    combined_height = gif1.height
+
+    # List to store stitched frames
+    frames = []
+
+    # Get frames for both GIFs and stitch them
+    for frame1, frame2 in zip(ImageSequence.Iterator(gif1), ImageSequence.Iterator(gif2)):
+        # Ensure both frames have the same size
+        frame1 = frame1.resize((gif1.width, gif1.height))
+        frame2 = frame2.resize((gif2.width, gif2.height))
+
+        # Create a new image for the combined frame
+        combined_frame = Image.new('RGBA', (combined_width, combined_height))
+
+        # Paste both frames side by side
+        combined_frame.paste(frame1, (0, 0))
+        combined_frame.paste(frame2, (gif1.width, 0))
+
+        # Append to frames list
+        frames.append(combined_frame)
+
+    # Save the stitched frames as a new GIF
+    frames[0].save(
+        output_path,
+        save_all=True,
+        append_images=frames[1:],
+        duration=gif1.info.get('duration', 100),  # Use the duration of the first GIF
+        loop=gif1.info.get('loop', 0)  # Use the loop setting of the first GIF
+    )
+
+
+stitch_gifs_side_by_side("Examples/Shape2_input.gif", "Examples/Shape2_output.gif", "Examples/Shape2_stitched.gif")
 
 
 # Helper function to copy files to a directory
@@ -82,25 +128,29 @@ def organize_files(list_of_train_images, list_of_train_labels, list_of_tests, ou
 
 
 # Change this list of train images if you wish to train on different data
+'''
 path_to_train_images = [
     "./UnprocessedImages/200x/Shape1",
     "./UnprocessedImages/200x/Shape2",
     "./UnprocessedImages/200x/Shape3"
 ]
+'''
 
 # This list must match the above list to ensure there is a correct label for each input image
+'''
 path_to_train_labels = [
     "./ProcessedImages/200x/Shape1",
     "./ProcessedImages/200x/Shape2",
     "./ProcessedImages/200x/Shape3"
 ]
 path_to_tests = ["./UnprocessedImages/200x/Shape4"]
+'''
 
 
 #organize_files(path_to_train_images, path_to_train_labels, path_to_tests)
 
 
-remove_ds_store_files()
+#remove_ds_store_files()
 
 
 directory_path = "UnprocessedImages/200x/Shape6"
