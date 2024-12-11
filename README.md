@@ -39,4 +39,4 @@ After your desired file organization, run $ python3 unet.py
 
 When prompted, input "y" to retrain the model
 
-To learn more about our research project and data processing, see the Reports folder.
+To learn more about our research project and data processing, see the Reports folder or watch our presentation here: https://www.youtube.com/watch?v=O248GbWsqtA
